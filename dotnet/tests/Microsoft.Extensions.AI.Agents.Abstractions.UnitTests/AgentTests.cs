@@ -27,20 +27,20 @@ public class AgentTests
     {
         this._agentThreadMock = new Mock<AgentThread>(MockBehavior.Strict);
 
-        this._invokeResponse = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, "Hi"));
-        this._invokeStreamingResponses.Add(new AgentRunResponseUpdate(ChatRole.Assistant, "Hi"));
+        this._invokeResponse = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, "Hi"));
+        this._invokeStreamingResponses.Add(new AgentRunResponseUpdate(ModelRole.Assistant, "Hi"));
 
         this._agentMock = new Mock<AIAgent>() { CallBase = true };
         this._agentMock
             .Setup(x => x.RunAsync(
-                It.IsAny<IReadOnlyCollection<ChatMessage>>(),
+                It.IsAny<IReadOnlyCollection<ModelMessage>>(),
                 this._agentThreadMock.Object,
                 It.IsAny<AgentRunOptions?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(this._invokeResponse);
         this._agentMock
             .Setup(x => x.RunStreamingAsync(
-                It.IsAny<IReadOnlyCollection<ChatMessage>>(),
+                It.IsAny<IReadOnlyCollection<ModelMessage>>(),
                 this._agentThreadMock.Object,
                 It.IsAny<AgentRunOptions?>(),
                 It.IsAny<CancellationToken>()))
@@ -65,7 +65,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 0),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 0),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -91,7 +91,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 1 && messages.First().Text == message),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 1 && messages.First().Text == message),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -106,7 +106,7 @@ public class AgentTests
     public async Task InvokeWithSingleMessageCallsMockedInvokeWithMessageInCollectionAsync()
     {
         // Arrange
-        var message = new ChatMessage(ChatRole.User, "Hello, Agent!");
+        var message = new ModelMessage(ModelRole.User, "Hello, Agent!");
         var options = new AgentRunOptions();
         var cancellationToken = new CancellationToken();
 
@@ -117,7 +117,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 1 && messages.First() == message),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 1 && messages.First() == message),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -145,7 +145,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunStreamingAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 0),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 0),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -174,7 +174,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunStreamingAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 1 && messages.First().Text == message),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 1 && messages.First().Text == message),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -189,7 +189,7 @@ public class AgentTests
     public async Task InvokeStreamingWithSingleMessageCallsMockedInvokeWithMessageInCollectionAsync()
     {
         // Arrange
-        var message = new ChatMessage(ChatRole.User, "Hello, Agent!");
+        var message = new ModelMessage(ModelRole.User, "Hello, Agent!");
         var options = new AgentRunOptions();
         var cancellationToken = new CancellationToken();
 
@@ -203,7 +203,7 @@ public class AgentTests
         // Verify that the mocked method was called with the expected parameters
         this._agentMock.Verify(
             x => x.RunStreamingAsync(
-                It.Is<IReadOnlyCollection<ChatMessage>>(messages => messages.Count == 1 && messages.First() == message),
+                It.Is<IReadOnlyCollection<ModelMessage>>(messages => messages.Count == 1 && messages.First() == message),
                 this._agentThreadMock.Object,
                 options,
                 cancellationToken),
@@ -242,7 +242,7 @@ public class AgentTests
     {
         var cancellationToken = new CancellationToken();
 
-        var messages = new[] { new ChatMessage(ChatRole.User, "msg1"), new ChatMessage(ChatRole.User, "msg2") };
+        var messages = new[] { new ModelMessage(ModelRole.User, "msg1"), new ModelMessage(ModelRole.User, "msg2") };
 
         var threadMock = new Mock<TestAgentThread>() { CallBase = true };
         var agent = new MockAgent();
@@ -272,7 +272,7 @@ public class AgentTests
                 constructThread);
         }
 
-        public new Task NotifyThreadOfNewMessagesAsync(AgentThread thread, IReadOnlyCollection<ChatMessage> messages, CancellationToken cancellationToken)
+        public new Task NotifyThreadOfNewMessagesAsync(AgentThread thread, IReadOnlyCollection<ModelMessage> messages, CancellationToken cancellationToken)
         {
             return base.NotifyThreadOfNewMessagesAsync(thread, messages, cancellationToken);
         }
@@ -282,12 +282,12 @@ public class AgentTests
             throw new NotImplementedException();
         }
 
-        public override Task<AgentRunResponse> RunAsync(IReadOnlyCollection<ChatMessage> messages, AgentThread? thread = null, AgentRunOptions? options = null, CancellationToken cancellationToken = default)
+        public override Task<AgentRunResponse> RunAsync(IReadOnlyCollection<ModelMessage> messages, AgentThread? thread = null, AgentRunOptions? options = null, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
-        public override IAsyncEnumerable<AgentRunResponseUpdate> RunStreamingAsync(IReadOnlyCollection<ChatMessage> messages, AgentThread? thread = null, AgentRunOptions? options = null, CancellationToken cancellationToken = default)
+        public override IAsyncEnumerable<AgentRunResponseUpdate> RunStreamingAsync(IReadOnlyCollection<ModelMessage> messages, AgentThread? thread = null, AgentRunOptions? options = null, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }

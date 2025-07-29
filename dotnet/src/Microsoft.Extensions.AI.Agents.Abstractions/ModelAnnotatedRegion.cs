@@ -6,7 +6,7 @@ namespace Microsoft.Extensions.AI;
 
 /// <summary>Describes the portion of an associated <see cref="ModelContent"/> to which an annotation applies.</summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
-//[JsonDerivedType(typeof(TextSpanAnnotatedRegion), typeDiscriminator: "textSpan")]
+[JsonDerivedType(typeof(TextSpanModelAnnotatedRegion), typeDiscriminator: "textSpan")]
 public class ModelAnnotatedRegion
 {
     /// <summary>

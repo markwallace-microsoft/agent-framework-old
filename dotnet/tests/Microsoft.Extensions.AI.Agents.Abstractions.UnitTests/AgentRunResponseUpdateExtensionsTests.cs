@@ -23,12 +23,12 @@ public class AgentRunResponseUpdateExtensionsTests
     {
         AgentRunResponseUpdate[] updates =
         [
-            new(ChatRole.Assistant, "Hello") { ResponseId = "someResponse", MessageId = "12345", CreatedAt = new DateTimeOffset(1, 2, 3, 4, 5, 6, TimeSpan.Zero), AgentId = "agentId" },
-            new(new("human"), ", ") { AuthorName = "Someone", AdditionalProperties = new() { ["a"] = "b" } },
-            new(null, "world!") { CreatedAt = new DateTimeOffset(2, 2, 3, 4, 5, 6, TimeSpan.Zero), AdditionalProperties = new() { ["c"] = "d" } },
+            new(ModelRole.Assistant, "Hello") { ResponseId = "someResponse", MessageId = "12345", CreatedAt = new DateTimeOffset(1, 2, 3, 4, 5, 6, TimeSpan.Zero), AgentId = "agentId" },
+            new(new ModelRole("human"), ", ") { AuthorName = "Someone", AdditionalProperties = new Dictionary < string, object ? >() {["a"] = "b" } },
+            new(null, "world!") { CreatedAt = new DateTimeOffset(2, 2, 3, 4, 5, 6, TimeSpan.Zero), AdditionalProperties = new Dictionary < string, object ? >() {["c"] = "d" } },
 
-            new() { Contents = [new UsageContent(new() { InputTokenCount = 1, OutputTokenCount = 2 })] },
-            new() { Contents = [new UsageContent(new() { InputTokenCount = 4, OutputTokenCount = 5 })] },
+            new() { Contents = [new UsageModelContent(new() { InputTokenCount = 1, OutputTokenCount = 2 })] },
+            new() { Contents = [new UsageModelContent(new() { InputTokenCount = 4, OutputTokenCount = 5 })] },
         ];
 
         AgentRunResponse response = useAsync ?
@@ -45,9 +45,9 @@ public class AgentRunResponseUpdateExtensionsTests
         Assert.Equal("someResponse", response.ResponseId);
         Assert.Equal(new DateTimeOffset(2, 2, 3, 4, 5, 6, TimeSpan.Zero), response.CreatedAt);
 
-        ChatMessage message = response.Messages.Single();
+        ModelMessage message = response.Messages.Single();
         Assert.Equal("12345", message.MessageId);
-        Assert.Equal(new ChatRole("human"), message.Role);
+        Assert.Equal(new ModelRole("human"), message.Role);
         Assert.Equal("Someone", message.AuthorName);
         Assert.Null(message.AdditionalProperties);
 
@@ -119,19 +119,19 @@ public class AgentRunResponseUpdateExtensionsTests
         {
             for (int i = 0; i < gapLength; i++)
             {
-                updates.Add(new() { Contents = [new DataContent("data:image/png;base64,aGVsbG8=")] });
+                updates.Add(new() { Contents = [new TextModelContent("data:image/png;base64,aGVsbG8=")] });
             }
         }
 
         AgentRunResponse response = useAsync ? await YieldAsync(updates).ToAgentRunResponseAsync() : updates.ToAgentRunResponse();
         Assert.NotNull(response);
 
-        ChatMessage message = response.Messages.Single();
+        ModelMessage message = response.Messages.Single();
         Assert.NotNull(message);
 
         Assert.Equal(expected.Count + (gapLength * ((numSequences - 1) + (gapBeginningEnd ? 2 : 0))), message.Contents.Count);
 
-        TextContent[] contents = message.Contents.OfType<TextContent>().ToArray();
+        TextModelContent[] contents = message.Contents.OfType<TextModelContent>().ToArray();
         Assert.Equal(expected.Count, contents.Length);
         for (int i = 0; i < expected.Count; i++)
         {
@@ -142,39 +142,39 @@ public class AgentRunResponseUpdateExtensionsTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ToAgentRunResponseCoalescesTextContentAndTextReasoningContentSeparatelyAsync(bool useAsync)
+    public async Task ToAgentRunResponseCoalescesTextModelContentAndTextReasoningModelContentSeparatelyAsync(bool useAsync)
     {
         AgentRunResponseUpdate[] updates =
         [
             new(null, "A"),
             new(null, "B"),
             new(null, "C"),
-            new() { Contents = [new TextReasoningContent("D")] },
-            new() { Contents = [new TextReasoningContent("E")] },
-            new() { Contents = [new TextReasoningContent("F")] },
+            new() { Contents = [new TextReasoningModelContent("D")] },
+            new() { Contents = [new TextReasoningModelContent("E")] },
+            new() { Contents = [new TextReasoningModelContent("F")] },
             new(null, "G"),
             new(null, "H"),
-            new() { Contents = [new TextReasoningContent("I")] },
-            new() { Contents = [new TextReasoningContent("J")] },
+            new() { Contents = [new TextReasoningModelContent("I")] },
+            new() { Contents = [new TextReasoningModelContent("J")] },
             new(null, "K"),
-            new() { Contents = [new TextReasoningContent("L")] },
+            new() { Contents = [new TextReasoningModelContent("L")] },
             new(null, "M"),
             new(null, "N"),
-            new() { Contents = [new TextReasoningContent("O")] },
-            new() { Contents = [new TextReasoningContent("P")] },
+            new() { Contents = [new TextReasoningModelContent("O")] },
+            new() { Contents = [new TextReasoningModelContent("P")] },
         ];
 
         AgentRunResponse response = useAsync ? await YieldAsync(updates).ToAgentRunResponseAsync() : updates.ToAgentRunResponse();
-        ChatMessage message = Assert.Single(response.Messages);
+        ModelMessage message = Assert.Single(response.Messages);
         Assert.Equal(8, message.Contents.Count);
-        Assert.Equal("ABC", Assert.IsType<TextContent>(message.Contents[0]).Text);
-        Assert.Equal("DEF", Assert.IsType<TextReasoningContent>(message.Contents[1]).Text);
-        Assert.Equal("GH", Assert.IsType<TextContent>(message.Contents[2]).Text);
-        Assert.Equal("IJ", Assert.IsType<TextReasoningContent>(message.Contents[3]).Text);
-        Assert.Equal("K", Assert.IsType<TextContent>(message.Contents[4]).Text);
-        Assert.Equal("L", Assert.IsType<TextReasoningContent>(message.Contents[5]).Text);
-        Assert.Equal("MN", Assert.IsType<TextContent>(message.Contents[6]).Text);
-        Assert.Equal("OP", Assert.IsType<TextReasoningContent>(message.Contents[7]).Text);
+        Assert.Equal("ABC", Assert.IsType<TextModelContent>(message.Contents[0]).Text);
+        Assert.Equal("DEF", Assert.IsType<TextReasoningModelContent>(message.Contents[1]).Text);
+        Assert.Equal("GH", Assert.IsType<TextModelContent>(message.Contents[2]).Text);
+        Assert.Equal("IJ", Assert.IsType<TextReasoningModelContent>(message.Contents[3]).Text);
+        Assert.Equal("K", Assert.IsType<TextModelContent>(message.Contents[4]).Text);
+        Assert.Equal("L", Assert.IsType<TextReasoningModelContent>(message.Contents[5]).Text);
+        Assert.Equal("MN", Assert.IsType<TextModelContent>(message.Contents[6]).Text);
+        Assert.Equal("OP", Assert.IsType<TextReasoningModelContent>(message.Contents[7]).Text);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class AgentRunResponseUpdateExtensionsTests
         [
             new(null, "Hello, "),
             new(null, "world!"),
-            new() { Contents = [new UsageContent(new() { TotalTokenCount = 42 })] },
+            new() { Contents = [new UsageModelContent(new() { TotalTokenCount = 42 })] },
         ];
 
         AgentRunResponse response = await YieldAsync(updates).ToAgentRunResponseAsync();
@@ -194,7 +194,7 @@ public class AgentRunResponseUpdateExtensionsTests
         Assert.NotNull(response.Usage);
         Assert.Equal(42, response.Usage.TotalTokenCount);
 
-        Assert.Equal("Hello, world!", Assert.IsType<TextContent>(Assert.Single(Assert.Single(response.Messages).Contents)).Text);
+        Assert.Equal("Hello, world!", Assert.IsType<TextModelContent>(Assert.Single(Assert.Single(response.Messages).Contents)).Text);
     }
 
     private static async IAsyncEnumerable<AgentRunResponseUpdate> YieldAsync(IEnumerable<AgentRunResponseUpdate> updates)

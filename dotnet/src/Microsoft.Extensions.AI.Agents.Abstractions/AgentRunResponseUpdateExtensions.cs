@@ -21,9 +21,9 @@ public static class AgentRunResponseUpdateExtensions
     /// <exception cref="ArgumentNullException"><paramref name="updates"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// As part of combining <paramref name="updates"/> into a single <see cref="AgentRunResponse"/>, the method will attempt to reconstruct
-    /// <see cref="ChatMessage"/> instances. This includes using <see cref="AgentRunResponseUpdate.MessageId"/> to determine
-    /// message boundaries, as well as coalescing contiguous <see cref="AIContent"/> items where applicable, e.g. multiple
-    /// <see cref="TextContent"/> instances in a row may be combined into a single <see cref="TextContent"/>.
+    /// <see cref="ModelMessage"/> instances. This includes using <see cref="AgentRunResponseUpdate.MessageId"/> to determine
+    /// message boundaries, as well as coalescing contiguous <see cref="ModelContent"/> items where applicable, e.g. multiple
+    /// <see cref="TextModelContent"/> instances in a row may be combined into a single <see cref="TextModelContent"/>.
     /// </remarks>
     public static AgentRunResponse ToAgentRunResponse(
         this IEnumerable<AgentRunResponseUpdate> updates)
@@ -49,9 +49,9 @@ public static class AgentRunResponseUpdateExtensions
     /// <exception cref="ArgumentNullException"><paramref name="updates"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// As part of combining <paramref name="updates"/> into a single <see cref="AgentRunResponse"/>, the method will attempt to reconstruct
-    /// <see cref="ChatMessage"/> instances. This includes using <see cref="AgentRunResponseUpdate.MessageId"/> to determine
-    /// message boundaries, as well as coalescing contiguous <see cref="AIContent"/> items where applicable, e.g. multiple
-    /// <see cref="TextContent"/> instances in a row may be combined into a single <see cref="TextContent"/>.
+    /// <see cref="ModelMessage"/> instances. This includes using <see cref="AgentRunResponseUpdate.MessageId"/> to determine
+    /// message boundaries, as well as coalescing contiguous <see cref="ModelContent"/> items where applicable, e.g. multiple
+    /// <see cref="TextModelContent"/> instances in a row may be combined into a single <see cref="TextModelContent"/>.
     /// </remarks>
     public static Task<AgentRunResponse> ToAgentRunResponseAsync(
         this IAsyncEnumerable<AgentRunResponseUpdate> updates,
@@ -78,15 +78,15 @@ public static class AgentRunResponseUpdateExtensions
         }
     }
 
-    /// <summary>Coalesces sequential <see cref="AIContent"/> content elements.</summary>
-    internal static void CoalesceTextContent(List<AIContent> contents)
+    /// <summary>Coalesces sequential <see cref="ModelContent"/> content elements.</summary>
+    internal static void CoalesceTextModelContent(List<ModelContent> contents)
     {
-        Coalesce<TextContent>(contents, static text => new(text));
-        Coalesce<TextReasoningContent>(contents, static text => new(text));
+        Coalesce<TextModelContent>(contents, static text => new(text));
+        //Coalesce<TextReasoningContent>(contents, static text => new(text));
 
         // This implementation relies on TContent's ToString returning its exact text.
-        static void Coalesce<TContent>(List<AIContent> contents, Func<string, TContent> fromText)
-            where TContent : AIContent
+        static void Coalesce<TContent>(List<ModelContent> contents, Func<string, TContent> fromText)
+            where TContent : ModelContent
         {
             StringBuilder? coalescedText = null;
 
@@ -94,7 +94,7 @@ public static class AgentRunResponseUpdateExtensions
             int start = 0;
             while (start < contents.Count - 1)
             {
-                // We need at least two TextContents in a row to be able to coalesce.
+                // We need at least two TextModelContents in a row to be able to coalesce.
                 if (contents[start] is not TContent firstText)
                 {
                     start++;
@@ -107,7 +107,7 @@ public static class AgentRunResponseUpdateExtensions
                     continue;
                 }
 
-                // Append the text from those nodes and continue appending subsequent TextContents until we run out.
+                // Append the text from those nodes and continue appending subsequent TextModelContents until we run out.
                 // We null out nodes as their text is appended so that we can later remove them all in one O(N) operation.
                 coalescedText ??= new();
                 _ = coalescedText.Clear().Append(firstText).Append(secondText);
@@ -124,7 +124,9 @@ public static class AgentRunResponseUpdateExtensions
                 // we can add that here.
                 var newContent = fromText(coalescedText.ToString());
                 contents[start] = newContent;
-                newContent.AdditionalProperties = firstText.AdditionalProperties?.Clone();
+                newContent.AdditionalProperties = firstText.AdditionalProperties != null
+                    ? new Dictionary<string, object?>(firstText.AdditionalProperties)
+                    : null;
 
                 start = i;
             }
@@ -140,7 +142,7 @@ public static class AgentRunResponseUpdateExtensions
         int count = response.Messages.Count;
         for (int i = 0; i < count; i++)
         {
-            CoalesceTextContent((List<AIContent>)response.Messages[i].Contents);
+            CoalesceTextModelContent((List<ModelContent>)response.Messages[i].Contents);
         }
     }
 
@@ -151,7 +153,7 @@ public static class AgentRunResponseUpdateExtensions
     {
         // If there is no message created yet, or if the last update we saw had a different
         // message ID than the newest update, create a new message.
-        ChatMessage message;
+        ModelMessage message;
         var isNewMessage = false;
         if (response.Messages.Count == 0)
         {
@@ -166,7 +168,7 @@ public static class AgentRunResponseUpdateExtensions
 
         if (isNewMessage)
         {
-            message = new ChatMessage(ChatRole.Assistant, []);
+            message = new ModelMessage(update.Role!, []);
             response.Messages.Add(message);
         }
         else
@@ -174,7 +176,7 @@ public static class AgentRunResponseUpdateExtensions
             message = response.Messages[response.Messages.Count - 1];
         }
 
-        // Some members on AgentRunResponseUpdate map to members of ChatMessage.
+        // Some members on AgentRunResponseUpdate map to members of ModelMessage.
         // Incorporate those into the latest message; in cases where the message
         // stores a single value, prefer the latest update's value over anything
         // stored in the message.
@@ -183,7 +185,7 @@ public static class AgentRunResponseUpdateExtensions
             message.AuthorName = update.AuthorName;
         }
 
-        if (update.Role is ChatRole role)
+        if (update.Role is IModelRole role)
         {
             message.Role = role;
         }
@@ -200,7 +202,7 @@ public static class AgentRunResponseUpdateExtensions
             switch (content)
             {
                 // Usage content is treated specially and propagated to the response's Usage.
-                case UsageContent usage:
+                case UsageModelContent usage:
                     (response.Usage ??= new()).Add(usage.Details);
                     break;
 
@@ -232,7 +234,7 @@ public static class AgentRunResponseUpdateExtensions
         {
             if (response.AdditionalProperties is null)
             {
-                response.AdditionalProperties = new(update.AdditionalProperties);
+                response.AdditionalProperties = new Dictionary<string, object?>(update.AdditionalProperties);
             }
             else
             {

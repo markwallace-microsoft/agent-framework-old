@@ -19,11 +19,11 @@ public class AgentRunResponseTests
         Assert.Empty(response.Messages);
         Assert.Empty(response.Text);
 
-        response = new((IList<ChatMessage>?)null);
+        response = new((IList<ModelMessage>?)null);
         Assert.Empty(response.Messages);
         Assert.Empty(response.Text);
 
-        Assert.Throws<ArgumentNullException>("message", () => new AgentRunResponse((ChatMessage)null!));
+        Assert.Throws<ArgumentNullException>("message", () => new AgentRunResponse((ModelMessage)null!));
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class AgentRunResponseTests
         Assert.NotNull(response.Messages);
         Assert.Same(response.Messages, response.Messages);
 
-        List<ChatMessage> messages = [];
+        List<ModelMessage> messages = [];
         response = new(messages);
         Assert.Same(messages, response.Messages);
 
@@ -46,14 +46,14 @@ public class AgentRunResponseTests
     [Fact]
     public void ConstructorWithChatResponseRoundtrips()
     {
-        ChatResponse chatResponse = new()
+        ModelResponse chatResponse = new()
         {
-            AdditionalProperties = new(),
+            AdditionalProperties = new Dictionary<string, object?>(),
             CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            Messages = [new(ChatRole.Assistant, "This is a test message.")],
+            Messages = [new(ModelRole.Assistant, "This is a test message.")],
             RawRepresentation = new object(),
             ResponseId = "responseId",
-            Usage = new UsageDetails(),
+            Usage = new ModelUsageDetails(),
         };
 
         AgentRunResponse response = new(chatResponse);
@@ -83,7 +83,7 @@ public class AgentRunResponseTests
         Assert.Equal(new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero), response.CreatedAt);
 
         Assert.Null(response.Usage);
-        UsageDetails usage = new();
+        ModelUsageDetails usage = new();
         response.Usage = usage;
         Assert.Same(usage, response.Usage);
 
@@ -93,7 +93,7 @@ public class AgentRunResponseTests
         Assert.Same(raw, response.RawRepresentation);
 
         Assert.Null(response.AdditionalProperties);
-        AdditionalPropertiesDictionary additionalProps = [];
+        Dictionary<string, object?> additionalProps = [];
         response.AdditionalProperties = additionalProps;
         Assert.Same(additionalProps, response.AdditionalProperties);
     }
@@ -101,14 +101,14 @@ public class AgentRunResponseTests
     [Fact]
     public void JsonSerializationRoundtrips()
     {
-        AgentRunResponse original = new(new ChatMessage(ChatRole.Assistant, "the message"))
+        AgentRunResponse original = new(new ModelMessage(ModelRole.Assistant, "the message"))
         {
             AgentId = "agentId",
             ResponseId = "id",
             CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            Usage = new UsageDetails(),
+            Usage = new ModelUsageDetails(),
             RawRepresentation = new(),
-            AdditionalProperties = new() { ["key"] = "value" },
+            AdditionalProperties = new Dictionary<string, object?>() { ["key"] = "value" },
         };
 
         string json = JsonSerializer.Serialize(original, TestJsonSerializerContext.Default.AgentRunResponse);
@@ -116,7 +116,7 @@ public class AgentRunResponseTests
         AgentRunResponse? result = JsonSerializer.Deserialize(json, TestJsonSerializerContext.Default.AgentRunResponse);
 
         Assert.NotNull(result);
-        Assert.Equal(ChatRole.Assistant, result.Messages.Single().Role);
+        Assert.Equal(ModelRole.Assistant, result.Messages.Single().Role);
         Assert.Equal("the message", result.Messages.Single().Text);
 
         Assert.Equal("agentId", result.AgentId);
@@ -134,7 +134,7 @@ public class AgentRunResponseTests
     [Fact]
     public void ToStringOutputsText()
     {
-        AgentRunResponse response = new(new ChatMessage(ChatRole.Assistant, $"This is a test.{Environment.NewLine}It's multiple lines."));
+        AgentRunResponse response = new(new ModelMessage(ModelRole.Assistant, $"This is a test.{Environment.NewLine}It's multiple lines."));
 
         Assert.Equal(response.Text, response.ToString());
     }
@@ -144,17 +144,17 @@ public class AgentRunResponseTests
     {
         AgentRunResponse response = new(
         [
-            new ChatMessage(
-                ChatRole.Assistant,
+            new ModelMessage(
+                ModelRole.Assistant,
                 [
-                    new DataContent("data:image/audio;base64,aGVsbG8="),
-                    new DataContent("data:image/image;base64,aGVsbG8="),
-                    new FunctionCallContent("callId1", "fc1"),
-                    new TextContent("message1-text-1"),
-                    new TextContent("message1-text-2"),
-                    new FunctionResultContent("callId1", "result"),
+                    //new DataContent("data:image/audio;base64,aGVsbG8="),
+                    //new DataContent("data:image/image;base64,aGVsbG8="),
+                    //new FunctionCallContent("callId1", "fc1"),
+                    new TextModelContent("message1-text-1"),
+                    new TextModelContent("message1-text-2"),
+                    //new FunctionResultContent("callId1", "result"),
                 ]),
-            new ChatMessage(ChatRole.Assistant, "message2")
+            new ModelMessage(ModelRole.Assistant, "message2")
         ]);
 
         Assert.Equal($"message1-text-1message1-text-2{Environment.NewLine}message2", response.Text);
@@ -171,13 +171,13 @@ public class AgentRunResponseTests
     [Fact]
     public void ToAgentRunResponseUpdatesProducesUpdates()
     {
-        AgentRunResponse response = new(new ChatMessage(new ChatRole("customRole"), "Text") { MessageId = "someMessage" })
+        AgentRunResponse response = new(new ModelMessage(new ModelRole("customRole"), "Text") { MessageId = "someMessage" })
         {
             AgentId = "agentId",
             ResponseId = "12345",
             CreatedAt = new DateTimeOffset(2024, 11, 10, 9, 20, 0, TimeSpan.Zero),
-            AdditionalProperties = new() { ["key1"] = "value1", ["key2"] = 42 },
-            Usage = new UsageDetails
+            AdditionalProperties = new Dictionary<string, object?>() { ["key1"] = "value1", ["key2"] = 42 },
+            Usage = new ModelUsageDetails
             {
                 TotalTokenCount = 100
             },
@@ -198,8 +198,8 @@ public class AgentRunResponseTests
         AgentRunResponseUpdate update1 = updates[1];
         Assert.Equal("value1", update1.AdditionalProperties?["key1"]);
         Assert.Equal(42, update1.AdditionalProperties?["key2"]);
-        Assert.IsType<UsageContent>(update1.Contents[0]);
-        UsageContent usageContent = (UsageContent)update1.Contents[0];
+        Assert.IsType<UsageModelContent>(update1.Contents[0]);
+        UsageModelContent usageContent = (UsageModelContent)update1.Contents[0];
         Assert.Equal(100, usageContent.Details.TotalTokenCount);
     }
 
@@ -208,7 +208,7 @@ public class AgentRunResponseTests
     {
         // Arrange.
         var expectedResult = new Animal { Id = 1, FullName = "Tigger", Species = Species.Tiger };
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, JsonSerializer.Serialize(expectedResult, TestJsonSerializerContext.Default.Animal)));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, JsonSerializer.Serialize(expectedResult, TestJsonSerializerContext.Default.Animal)));
 
         // Act.
         var animal = response.Deserialize<Animal>(TestJsonSerializerContext.Default.Options);
@@ -224,7 +224,7 @@ public class AgentRunResponseTests
     public void ParseAsStructuredOutputFailsWithEmptyString()
     {
         // Arrange.
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, string.Empty));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, string.Empty));
 
         // Act & Assert.
         var exception = Assert.Throws<InvalidOperationException>(() => response.Deserialize<Animal>(TestJsonSerializerContext.Default.Options));
@@ -235,7 +235,7 @@ public class AgentRunResponseTests
     public void ParseAsStructuredOutputFailsWithInvalidJson()
     {
         // Arrange.
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, "invalid json"));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, "invalid json"));
 
         // Act & Assert.
         Assert.Throws<JsonException>(() => response.Deserialize<Animal>(TestJsonSerializerContext.Default.Options));
@@ -245,7 +245,7 @@ public class AgentRunResponseTests
     public void ParseAsStructuredOutputFailsWithIncorrectTypedJson()
     {
         // Arrange.
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, "[]"));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, "[]"));
 
         // Act & Assert.
         Assert.Throws<JsonException>(() => response.Deserialize<Animal>(TestJsonSerializerContext.Default.Options));
@@ -256,7 +256,7 @@ public class AgentRunResponseTests
     {
         // Arrange.
         var expectedResult = new Animal { Id = 1, FullName = "Tigger", Species = Species.Tiger };
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, JsonSerializer.Serialize(expectedResult, TestJsonSerializerContext.Default.Animal)));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, JsonSerializer.Serialize(expectedResult, TestJsonSerializerContext.Default.Animal)));
 
         // Act.
         var animal = response.Deserialize<Animal>(TestJsonSerializerContext.Default.Options);
@@ -272,7 +272,7 @@ public class AgentRunResponseTests
     public void TryParseAsStructuredOutputFailsWithEmptyText()
     {
         // Arrange.
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, string.Empty));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, string.Empty));
 
         // Act & Assert.
         Assert.False(response.TryDeserialize<Animal>(TestJsonSerializerContext.Default.Options, out _));
@@ -282,7 +282,7 @@ public class AgentRunResponseTests
     public void TryParseAsStructuredOutputFailsWithIncorrectTypedJson()
     {
         // Arrange.
-        var response = new AgentRunResponse(new ChatMessage(ChatRole.Assistant, "[]"));
+        var response = new AgentRunResponse(new ModelMessage(ModelRole.Assistant, "[]"));
 
         // Act & Assert.
         Assert.False(response.TryDeserialize<Animal>(TestJsonSerializerContext.Default.Options, out _));

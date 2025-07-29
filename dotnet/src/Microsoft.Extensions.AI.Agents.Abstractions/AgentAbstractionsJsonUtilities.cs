@@ -40,7 +40,7 @@ public static partial class AgentAbstractionsJsonUtilities
         JsonSerializerOptions options = new(JsonContext.Default.Options);
 
         // Chain with all supported types from Microsoft.Extensions.AI.Abstractions.
-        options.TypeInfoResolverChain.Add(AIJsonUtilities.DefaultOptions.TypeInfoResolver!);
+        //options.TypeInfoResolverChain.Add(AIJsonUtilities.DefaultOptions.TypeInfoResolver!);
 
         options.MakeReadOnly();
         return options;

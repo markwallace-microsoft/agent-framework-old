@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.AI;
 /// Represents an annotation on content.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
-//[JsonDerivedType(typeof(CitationAnnotation), typeDiscriminator: "citation")]
+[JsonDerivedType(typeof(CitationModelAnnotation), typeDiscriminator: "citation")]
 public class ModelAnnotation
 {
     /// <summary>

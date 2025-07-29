@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.AI.Agents;
 /// <para>
 /// <see cref="AgentRunResponseUpdate"/> is so named because it represents updates
 /// that layer on each other to form a single agent response. Conceptually, this combines the roles of
-/// <see cref="AgentRunResponse"/> and <see cref="ChatMessage"/> in streaming output.
+/// <see cref="AgentRunResponse"/> and <see cref="ModelMessage"/> in streaming output.
 /// </para>
 /// <para>
 /// The relationship between <see cref="AgentRunResponse"/> and <see cref="AgentRunResponseUpdate"/> is
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.AI.Agents;
 public class AgentRunResponseUpdate
 {
     /// <summary>The response update content items.</summary>
-    private IList<AIContent>? _contents;
+    private IList<ModelContent>? _contents;
 
     /// <summary>The name of the author of the update.</summary>
     private string? _authorName;
@@ -45,23 +45,23 @@ public class AgentRunResponseUpdate
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponseUpdate"/> class.</summary>
     /// <param name="role">The role of the author of the update.</param>
     /// <param name="content">The text content of the update.</param>
-    public AgentRunResponseUpdate(ChatRole? role, string? content)
-        : this(role, content is null ? null : [new TextContent(content)])
+    public AgentRunResponseUpdate(IModelRole? role, string? content)
+        : this(role, content is null ? null : [new TextModelContent(content)])
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponseUpdate"/> class.</summary>
     /// <param name="role">The role of the author of the update.</param>
     /// <param name="contents">The contents of the update.</param>
-    public AgentRunResponseUpdate(ChatRole? role, IList<AIContent>? contents)
+    public AgentRunResponseUpdate(IModelRole? role, IList<ModelContent>? contents)
     {
         this.Role = role;
         this._contents = contents;
     }
 
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponseUpdate"/> class.</summary>
-    /// <param name="chatResponseUpdate">The <see cref="ChatResponseUpdate"/> from which to seed this <see cref="AgentRunResponseUpdate"/>.</param>
-    public AgentRunResponseUpdate(ChatResponseUpdate chatResponseUpdate)
+    /// <param name="chatResponseUpdate">The <see cref="ModelResponseUpdate"/> from which to seed this <see cref="AgentRunResponseUpdate"/>.</param>
+    public AgentRunResponseUpdate(ModelResponseUpdate chatResponseUpdate)
     {
         _ = Throw.IfNull(chatResponseUpdate);
 
@@ -83,18 +83,18 @@ public class AgentRunResponseUpdate
     }
 
     /// <summary>Gets or sets the role of the author of the response update.</summary>
-    public ChatRole? Role { get; set; }
+    public IModelRole? Role { get; set; }
 
     /// <summary>Gets the text of this update.</summary>
     /// <remarks>
-    /// This property concatenates the text of all <see cref="TextContent"/> objects in <see cref="Contents"/>.
+    /// This property concatenates the text of all <see cref="TextModelContent"/> objects in <see cref="Contents"/>.
     /// </remarks>
     [JsonIgnore]
     public string Text => this._contents is not null ? this._contents.ConcatText() : string.Empty;
 
     /// <summary>Gets or sets the agent run response update content items.</summary>
     [AllowNull]
-    public IList<AIContent> Contents
+    public IList<ModelContent> Contents
     {
         get => this._contents ??= [];
         set => this._contents = value;
@@ -110,7 +110,7 @@ public class AgentRunResponseUpdate
     public object? RawRepresentation { get; set; }
 
     /// <summary>Gets or sets additional properties for the update.</summary>
-    public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+    public IDictionary<string, object?>? AdditionalProperties { get; set; }
 
     /// <summary>Gets or sets the ID of the agent that produced the response.</summary>
     public string? AgentId { get; set; }
@@ -139,9 +139,9 @@ public class AgentRunResponseUpdate
     /// <inheritdoc/>
     public override string ToString() => this.Text;
 
-    /// <summary>Gets a <see cref="AIContent"/> object to display in the debugger display.</summary>
+    /// <summary>Gets a <see cref="ModelContent"/> object to display in the debugger display.</summary>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private AIContent? ContentForDebuggerDisplay => this._contents is { Count: > 0 } ? this._contents[0] : null;
+    private ModelContent? ContentForDebuggerDisplay => this._contents is { Count: > 0 } ? this._contents[0] : null;
 
     /// <summary>Gets an indication for the debugger display of whether there's more content.</summary>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]

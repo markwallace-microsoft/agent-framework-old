@@ -18,9 +18,16 @@ public class ModelMessage
 
     /// <summary>Initializes a new instance of the <see cref="ModelMessage"/> class.</summary>
     [JsonConstructor]
-    public ModelMessage(IModelRole role)
+    public ModelMessage()
     {
-        this.Role = role ?? throw new ArgumentNullException(nameof(role), "Role cannot be null.");
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="ModelMessage"/> class.</summary>
+    /// <param name="role">The role of the author of the message.</param>
+    /// <param name="content">The text content of the message.</param>
+    public ModelMessage(ModelRole role, string? content)
+        : this(role, content is null ? [] : [new TextModelContent(content)])
+    {
     }
 
     /// <summary>Initializes a new instance of the <see cref="ModelMessage"/> class.</summary>
@@ -39,13 +46,14 @@ public class ModelMessage
     /// refer to the same objects as the original.
     /// </remarks>
     public ModelMessage Clone() =>
-        new(this.Role)
+        new()
         {
             AdditionalProperties = this.AdditionalProperties,
             _authorName = this._authorName,
             _contents = this._contents,
             CreatedAt = this.CreatedAt,
             RawRepresentation = this.RawRepresentation,
+            Role = this.Role,
             MessageId = this.MessageId,
         };
 
@@ -60,7 +68,7 @@ public class ModelMessage
     public DateTimeOffset? CreatedAt { get; set; }
 
     /// <summary>Gets or sets the role of the author of the message.</summary>
-    public IModelRole Role { get; set; }
+    public IModelRole Role { get; set; } = ModelRole.User;
 
     /// <summary>Gets the text of this message.</summary>
     /// <remarks>

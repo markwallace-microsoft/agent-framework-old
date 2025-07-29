@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.AI.Agents;
 public class AgentRunResponse
 {
     /// <summary>The response messages.</summary>
-    private IList<ChatMessage>? _messages;
+    private IList<ModelMessage>? _messages;
 
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponse"/> class.</summary>
     public AgentRunResponse()
@@ -37,7 +37,7 @@ public class AgentRunResponse
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponse"/> class.</summary>
     /// <param name="message">The response message.</param>
     /// <exception cref="ArgumentNullException"><paramref name="message"/> is <see langword="null"/>.</exception>
-    public AgentRunResponse(ChatMessage message)
+    public AgentRunResponse(ModelMessage message)
     {
         _ = Throw.IfNull(message);
 
@@ -45,38 +45,38 @@ public class AgentRunResponse
     }
 
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponse"/> class.</summary>
-    /// <param name="response">The <see cref="ChatResponse"/> from which to seed this <see cref="AgentRunResponse"/>.</param>
+    /// <param name="response">The <see cref="ModelResponse"/> from which to seed this <see cref="AgentRunResponse"/>.</param>
     /// <exception cref="ArgumentNullException"><paramref name="response"/> is <see langword="null"/>.</exception>
-    public AgentRunResponse(ChatResponse response)
+    public AgentRunResponse(ModelResponse response)
     {
         _ = Throw.IfNull(response);
 
         this.AdditionalProperties = response.AdditionalProperties;
         this.CreatedAt = response.CreatedAt;
-        this.Messages = response.Messages;
+        //this.Messages = response.Messages;
         this.RawRepresentation = response.RawRepresentation;
-        this.ResponseId = response.ResponseId;
-        this.Usage = response.Usage;
+        //this.ResponseId = response.ResponseId;
+        //this.Usage = response.Usage;
     }
 
     /// <summary>Initializes a new instance of the <see cref="AgentRunResponse"/> class.</summary>
     /// <param name="messages">The response messages.</param>
-    public AgentRunResponse(IList<ChatMessage>? messages)
+    public AgentRunResponse(IList<ModelMessage>? messages)
     {
         this._messages = messages;
     }
 
     /// <summary>Gets or sets the agent response messages.</summary>
     [AllowNull]
-    public IList<ChatMessage> Messages
+    public IList<ModelMessage> Messages
     {
-        get => this._messages ??= new List<ChatMessage>(1);
+        get => this._messages ??= new List<ModelMessage>(1);
         set => this._messages = value;
     }
 
     /// <summary>Gets the text of the response.</summary>
     /// <remarks>
-    /// This property concatenates the <see cref="ChatMessage.Text"/> of all <see cref="ChatMessage"/>
+    /// This property concatenates the <see cref="ModelMessage.Text"/> of all <see cref="ModelMessage"/>
     /// instances in <see cref="Messages"/>.
     /// </remarks>
     [JsonIgnore]
@@ -96,7 +96,7 @@ public class AgentRunResponse
     /// Where the agent run response is produced via many model invocations, this
     /// usage is an aggregation of the usage for all these model invocations.
     /// </remarks>
-    public UsageDetails? Usage { get; set; }
+    public ModelUsageDetails? Usage { get; set; }
 
     /// <summary>Gets or sets the raw representation of the run response from an underlying implementation.</summary>
     /// <remarks>
@@ -108,7 +108,7 @@ public class AgentRunResponse
     public object? RawRepresentation { get; set; }
 
     /// <summary>Gets or sets any additional properties associated with the run response.</summary>
-    public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+    public IDictionary<string, object?>? AdditionalProperties { get; set; }
 
     /// <inheritdoc />
     public override string ToString() => this.Text;
@@ -127,7 +127,7 @@ public class AgentRunResponse
 
             if (this.Usage is { } usage)
             {
-                extra.Contents.Add(new UsageContent(usage));
+                extra.Contents.Add(new UsageModelContent(usage));
             }
         }
 
@@ -137,7 +137,7 @@ public class AgentRunResponse
         int i;
         for (i = 0; i < messageCount; i++)
         {
-            ChatMessage message = this._messages![i];
+            ModelMessage message = this._messages![i];
             updates[i] = new AgentRunResponseUpdate
             {
                 AdditionalProperties = message.AdditionalProperties,

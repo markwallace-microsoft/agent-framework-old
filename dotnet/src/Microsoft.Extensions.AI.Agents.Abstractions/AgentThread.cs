@@ -39,7 +39,7 @@ public class AgentThread
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to monitor for cancellation requests. The default is <see cref="CancellationToken.None"/>.</param>
     /// <returns>A task that completes when the context has been updated.</returns>
     /// <exception cref="InvalidOperationException">The thread has been deleted.</exception>
-    protected internal virtual Task OnNewMessagesAsync(IReadOnlyCollection<ChatMessage> newMessages, CancellationToken cancellationToken = default)
+    protected internal virtual Task OnNewMessagesAsync(IReadOnlyCollection<ModelMessage> newMessages, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }

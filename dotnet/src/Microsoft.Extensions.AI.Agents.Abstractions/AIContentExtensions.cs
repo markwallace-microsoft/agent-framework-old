@@ -14,13 +14,13 @@ using System.Text;
 namespace Microsoft.Extensions.AI.Agents;
 
 // TODO: Consolidate with same internal class in Microsoft.Extensions.AI.Abstractions when both are available in the same repository.
-/// <summary>Internal extensions for working with <see cref="AIContent"/>.</summary>
-internal static class AIContentExtensions
+/// <summary>Internal extensions for working with <see cref="ModelContent"/>.</summary>
+internal static class ModelContentExtensions
 {
-    /// <summary>Concatenates the text of all <see cref="TextContent"/> instances in the list.</summary>
-    public static string ConcatText(this IEnumerable<AIContent> contents)
+    /// <summary>Concatenates the text of all <see cref="TextModelContent"/> instances in the list.</summary>
+    public static string ConcatText(this IEnumerable<ModelContent> contents)
     {
-        if (contents is IList<AIContent> list)
+        if (contents is IList<ModelContent> list)
         {
             int count = list.Count;
             switch (count)
@@ -29,14 +29,14 @@ internal static class AIContentExtensions
                     return string.Empty;
 
                 case 1:
-                    return (list[0] as TextContent)?.Text ?? string.Empty;
+                    return (list[0] as TextModelContent)?.Text ?? string.Empty;
 
                 default:
 #if NET
                     DefaultInterpolatedStringHandler builder = new(count, 0, null, stackalloc char[512]);
                     for (int i = 0; i < count; i++)
                     {
-                        if (list[i] is TextContent text)
+                        if (list[i] is TextModelContent text)
                         {
                             builder.AppendLiteral(text.Text);
                         }
@@ -47,7 +47,7 @@ internal static class AIContentExtensions
                     StringBuilder builder = new();
                     for (int i = 0; i < count; i++)
                     {
-                        if (list[i] is TextContent text)
+                        if (list[i] is TextModelContent text)
                         {
                             builder.Append(text.Text);
                         }
@@ -58,12 +58,12 @@ internal static class AIContentExtensions
             }
         }
 
-        return string.Concat(contents.OfType<TextContent>());
+        return string.Concat(contents.OfType<TextModelContent>());
     }
 
-    /// <summary>Concatenates the <see cref="ChatMessage.Text"/> of all <see cref="ChatMessage"/> instances in the list.</summary>
+    /// <summary>Concatenates the <see cref="ModelMessage.Text"/> of all <see cref="ModelMessage"/> instances in the list.</summary>
     /// <remarks>A newline separator is added between each non-empty piece of text.</remarks>
-    public static string ConcatText(this IList<ChatMessage> messages)
+    public static string ConcatText(this IList<ModelMessage> messages)
     {
         int count = messages.Count;
         switch (count)

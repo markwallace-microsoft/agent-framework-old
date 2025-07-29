@@ -32,5 +32,5 @@ public interface IMessagesRetrievableThread
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to monitor for cancellation requests. The default is <see cref="CancellationToken.None"/>.</param>
     /// <returns>The messages in the thread.</returns>
     /// <exception cref="InvalidOperationException">The thread has been deleted.</exception>
-    IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken = default);
+    IAsyncEnumerable<ModelMessage> GetMessagesAsync(CancellationToken cancellationToken = default);
 }
